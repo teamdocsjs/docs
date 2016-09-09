@@ -22,7 +22,7 @@
 
 
 
-function LitRead(data) {
+function LitEnd(data) {
     this.bp = 0;
     this.arr = data;
     this.len = data.length;
@@ -38,8 +38,13 @@ function LitRead(data) {
     this.u32 = function () {
         return this.arr[this.bp++] | this.arr[this.bp++] << 8 | this.arr[this.bp++] << 16 | this.arr[this.bp++] << 24;
     };
+    this.read = function (inp) {
+        for (var i = 0, ii = inp.length; i < ii; i++) {
+            inp[i] = this.u8();
+        }
+    };
 }
-function BigRead(data) {
+function BigEnd(data) {
     this.bp = 0;
     this.arr = data;
     this.len = data.length;
@@ -55,21 +60,63 @@ function BigRead(data) {
     this.u32 = function () {
         return this.arr[this.bp++] << 24 | this.arr[this.bp++] << 16 | this.arr[this.bp++] << 8 | this.arr[this.bp++];
     };
+    this.read = function (inp) {
+        for (var i = 0, ii = inp.length; i < ii; i++) {
+            inp[i] = this.u8();
+        }
+    };
 }
 
-function readFile(){
-    var ff = document.getElementById("fileID").files[0];      
+function Doc2003() {
+    this._minor, this._major, this._uSectorShift, this._uMiniSectorShift;
+    this._csectFat;
+    this._sectDirStart;
+    this._ulMiniSectorCutoff;
+    this._sectMiniFatStart; // [03CH,04] first SECT in the mini-FAT chain
+    this._csectMiniFat; // [040H,04] number of SECTs in the mini-FAT chain
+    this._sectDifStart; // [044H,04] first SECT in the DIF chain
+    this._csectDif; // [048H,04] number of SECTs in the DIF chain
+    this._sectFat = new Array(109); // [04CH,436] the SECTs of the first 109 FAT sectors
+}
+
+function readFile() {
+    var ff = document.getElementById("fileID").files[0];
     var fr = new FileReader();
-    fr.onload = function(){
+    fr.onload = function () {
+        //starting header
         var data = new Uint8Array(fr.result);
-        var read = new LitRead(data);
-        console.log(read.u32());    
-        console.log(read.bp);
+        var end = new LitEnd(data);
+        var t = [0, 0, 0, 0, 0, 0, 0, 0];
+        end.read(t);
+        if (t[0] !== 0xd0 && t[0] !== 0xe0) {
+            throw "Invalid DOC File";
+        }
+        end.bp += 16;
+        var d3 = new Doc2003();
+        d3._minor = end.u16();
+        d3._major = end.u16();
+        end.bp += 2;
+        d3._uSectorShift = end.u16();
+        d3._uMiniSectorShift = end.u16();
+        end.bp += 10;
+        d3._csectFat = end.u32();
+        d3._sectDirStart = end.u32();
+        end.bp += 4;
+        d3._ulMiniSectorCutoff = end.u32();
+        d3._sectMiniFatStart = end.u32();
+        d3._csectMiniFat = end.u32();
+        d3._sectDifStart = end.u32();
+        d3._csectDif = end.u32();
+        for (var i = 0; i < 109; i++) {
+            d3._sectFat[i] = end.u32();
+        }
+
+//        SECT << ssheader._uSectorShift + 512
+        console.log(d3);
+
+        console.log(d3._csectFat + " " + d3._sectDirStart + " " + d3._ulMiniSectorCutoff);
+
     };
-    
+
     fr.readAsArrayBuffer(ff);
-    
-   
-    
-    
 }
