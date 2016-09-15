@@ -71,7 +71,8 @@ function Doc2003() {
     this.nDirSect, this.nFatSect, this.dirSectStart, this.miniSectCutoff;
     this.miniFatSectStart, this.nMiniFatSect, this.difSectStart, this.nDifSect;
     this.fatSects = new Array(109); // [04CH,436] the SECTs of the first 109 FAT sectors
-    this.dirs = [0];
+    this.dirs = [];
+    this.dirMax = 0;
 }
 
 function Directory() {
@@ -82,7 +83,9 @@ function Directory() {
     this.color;
     this.left, this.right, this.child;
     this.classID = new Array(16);
-
+    this.stateBits;
+    this.startSectLoc;
+    this.streamSize;
 }
 
 function readFile() {
@@ -119,23 +122,37 @@ function readFile() {
         }
         //now reading directory entries
         var off = (d3.dirSectStart << d3.sectShift) + 512;
-        var dir = new Directory(off);
         end.bp = off;
-        for (var i = 0; i < 32; i++) {
-            dir.name[i] = (String.fromCharCode(end.u16()));
+        while (end.bp < end.len) {
+            if ((d3.dirMax + 1) === d3.dirs.length) {
+                break;
+            }
+            var dir = new Directory();
+            for (var i = 0; i < 32; i++) {
+                dir.name[i] = (String.fromCharCode(end.u16()));
+            }
+            dir.nameLen = String.fromCharCode(end.u16());
+            dir.type = end.u8();
+            dir.color = end.u8();
+            dir.left = end.u32();
+            dir.right = end.u32();
+            dir.child = end.u32();
+            for (var i = 0; i < 16; i++) {
+                dir.classID[i] = end.u8();
+            }
+            dir.stateBits = end.u32();
+            end.bp += 16;
+            dir.startSectLoc = end.u32();
+            dir.streamSize = end.u32();
+            end.bp += 4;
+            d3.dirs.push(dir);
+            d3.dirMax = Math.max(Math.max(Math.max(dir.left, dir.right), dir.child),d3.dirMax);
+            console.log(dir);
         }
-        dir.nameLen = String.fromCharCode(end.u16());
-        dir.type = end.u8();
-        dir.color = end.u8();
-        dir.left = end.u32();
-        dir.right = end.u32();
-        dir.child = end.u32();
-        for (var i = 0; i < 16; i++) {
-            dir.classID[i] = end.u8();
-        }
+
 //        SECT << ssheader._uSectorShift + 512
         console.log(d3);
-        console.log(dir);
+
 
 
     };
