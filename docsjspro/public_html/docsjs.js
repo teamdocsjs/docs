@@ -66,17 +66,23 @@ function BigEnd(data) {
         }
     };
 }
-
 function Doc2003() {
-    this._minor, this._major, this._uSectorShift, this._uMiniSectorShift;
-    this._csectFat;
-    this._sectDirStart;
-    this._ulMiniSectorCutoff;
-    this._sectMiniFatStart; // [03CH,04] first SECT in the mini-FAT chain
-    this._csectMiniFat; // [040H,04] number of SECTs in the mini-FAT chain
-    this._sectDifStart; // [044H,04] first SECT in the DIF chain
-    this._csectDif; // [048H,04] number of SECTs in the DIF chain
-    this._sectFat = new Array(109); // [04CH,436] the SECTs of the first 109 FAT sectors
+    this.minor, this.major, this.bOrder, this.sectShift, this.miniSectShift;
+    this.nDirSect, this.nFatSect, this.dirSectStart, this.miniSectCutoff;
+    this.miniFatSectStart, this.nMiniFatSect, this.difSectStart, this.nDifSect;
+    this.fatSects = new Array(109); // [04CH,436] the SECTs of the first 109 FAT sectors
+    this.dirs = [0];
+}
+
+function Directory() {
+    this.name = new Array(32);
+    this.nameLen;
+    /**INVALID = 0,STORAGE = 1,STREAM = 2,LOCKBYTES = 3,PROPERTY = 4,ROOT = 5*/
+    this.type;
+    this.color;
+    this.left, this.right, this.child;
+    this.classID = new Array(16);
+
 }
 
 function readFile() {
@@ -93,28 +99,44 @@ function readFile() {
         }
         end.bp += 16;
         var d3 = new Doc2003();
-        d3._minor = end.u16();
-        d3._major = end.u16();
-        end.bp += 2;
-        d3._uSectorShift = end.u16();
-        d3._uMiniSectorShift = end.u16();
-        end.bp += 10;
-        d3._csectFat = end.u32();
-        d3._sectDirStart = end.u32();
+        d3.minor = end.u16();
+        d3.major = end.u16();
+        d3.bOrder = end.u16();
+        d3.sectShift = end.u16();
+        d3.miniSectShift = end.u16();
+        end.bp += 6;
+        d3.nDirSect = end.u32();
+        d3.nFatSect = end.u32();
+        d3.dirSectStart = end.u32();
         end.bp += 4;
-        d3._ulMiniSectorCutoff = end.u32();
-        d3._sectMiniFatStart = end.u32();
-        d3._csectMiniFat = end.u32();
-        d3._sectDifStart = end.u32();
-        d3._csectDif = end.u32();
+        d3.miniSectCutoff = end.u32();
+        d3.miniFatSectStart = end.u32();
+        d3.nMiniFatSect = end.u32();
+        d3.difSectStart = end.u32();
+        d3.nDifSect = end.u32();
         for (var i = 0; i < 109; i++) {
-            d3._sectFat[i] = end.u32();
+            d3.fatSects[i] = end.u32();
         }
-
+        //now reading directory entries
+        var off = (d3.dirSectStart << d3.sectShift) + 512;
+        var dir = new Directory(off);
+        end.bp = off;
+        for (var i = 0; i < 32; i++) {
+            dir.name[i] = (String.fromCharCode(end.u16()));
+        }
+        dir.nameLen = String.fromCharCode(end.u16());
+        dir.type = end.u8();
+        dir.color = end.u8();
+        dir.left = end.u32();
+        dir.right = end.u32();
+        dir.child = end.u32();
+        for (var i = 0; i < 16; i++) {
+            dir.classID[i] = end.u8();
+        }
 //        SECT << ssheader._uSectorShift + 512
         console.log(d3);
+        console.log(dir);
 
-        console.log(d3._csectFat + " " + d3._sectDirStart + " " + d3._ulMiniSectorCutoff);
 
     };
 
