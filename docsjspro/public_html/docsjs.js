@@ -68,14 +68,14 @@ function BigEnd(data) {
 }
 function Doc2003() {
     this.minor, this.major, this.bOrder, this.sectShift, this.miniSectShift;
-    this.nDirSect, this.nFatSect, this.dirSectStart, this.miniSectCutoff;
-    this.miniFatSectStart, this.nMiniFatSect, this.difSectStart, this.nDifSect;
+    this.nDirSect, this.nFatSect, this.dirSectStart, this.miniStreamCutoff;
+    this.miniFatStart, this.nMiniFatSect, this.difSectStart, this.nDifSect;
     this.fatSects = new Array(109); // [04CH,436] the SECTs of the first 109 FAT sectors
     this.dirs = [];
     this.dirMax = 0;
 }
 
-function Directory() {
+function DocDir() {
     this.name = new Array(32);
     this.nameLen;
     /**INVALID = 0,STORAGE = 1,STREAM = 2,LOCKBYTES = 3,PROPERTY = 4,ROOT = 5*/
@@ -86,6 +86,7 @@ function Directory() {
     this.stateBits;
     this.startSectLoc;
     this.streamSize;
+    this.streamOffset = -1;
 }
 
 function readFile() {
@@ -112,8 +113,8 @@ function readFile() {
         d3.nFatSect = end.u32();
         d3.dirSectStart = end.u32();
         end.bp += 4;
-        d3.miniSectCutoff = end.u32();
-        d3.miniFatSectStart = end.u32();
+        d3.miniStreamCutoff = end.u32();
+        d3.miniFatStart = end.u32();
         d3.nMiniFatSect = end.u32();
         d3.difSectStart = end.u32();
         d3.nDifSect = end.u32();
@@ -127,7 +128,7 @@ function readFile() {
             if ((d3.dirMax + 1) === d3.dirs.length) {
                 break;
             }
-            var dir = new Directory();
+            var dir = new DocDir();
             for (var i = 0; i < 32; i++) {
                 dir.name[i] = (String.fromCharCode(end.u16()));
             }
@@ -146,8 +147,20 @@ function readFile() {
             dir.streamSize = end.u32();
             end.bp += 4;
             d3.dirs.push(dir);
-            d3.dirMax = Math.max(Math.max(Math.max(dir.left, dir.right), dir.child),d3.dirMax);
-            console.log(dir);
+            d3.dirMax = Math.max(Math.max(Math.max(dir.left, dir.right), dir.child), d3.dirMax);
+        }
+
+        for (var i = 0, ii = d3.dirs.length; i < ii; i++) {
+            var dir = d3.dirs[i];
+            if (dir.streamSize > 0) {
+                if (dir.type === 5) {
+                    dir.streamOffset = 512 + (dir.startSectLoc << d3.sectShift);
+                } else if (dir.streamSize < d3.miniStreamCutoff) {
+                    dir.streamOffset = 512 + (d3.miniFatStart << d3.sectShift) + (dir.startSectLoc << d3.miniSectShift);
+                } else {
+                    dir.streamOffset = 512 + (dir.startSectLoc << d3.sectShift);
+                }
+            }
         }
 
 //        SECT << ssheader._uSectorShift + 512
