@@ -158,7 +158,7 @@ Doc2003.prototype.getFib = function (end) {
         obj.lidFE = end.u16();
         return obj;
     }
-    ;
+
     function getFibRgLw(end) {
         var obj = {};
         obj.cbMac = end.u32();
@@ -174,7 +174,7 @@ Doc2003.prototype.getFib = function (end) {
         end.bp += 44;
         return obj;
     }
-    ;
+
     function getFibRgFcLcbBlob(end, nFib) {
         switch (nFib) {
             case 0x00C1:
@@ -190,7 +190,7 @@ Doc2003.prototype.getFib = function (end) {
         }
         return {};
     }
-    ;
+
     function getFibRgFcLcb97(end) {
         var obj = {};
         obj.fcStshfOrig = end.u32();
@@ -381,7 +381,7 @@ Doc2003.prototype.getFib = function (end) {
         obj.lcbSttbfUssr = end.u32();
         return obj;
     }
-    ;
+
     function getFibRgFcLcb2000(end) {
         var tt = getFibRgFcLcb97(end);
         var obj = {};
@@ -420,7 +420,7 @@ Doc2003.prototype.getFib = function (end) {
         obj.lcbBkdEdnOld = end.u32();
         return obj;
     }
-    ;
+
     function getFibRgFcLcb2002(end) {
         var tt = getFibRgFcLcb2000(end);
         var obj = {};
@@ -493,8 +493,111 @@ Doc2003.prototype.getFib = function (end) {
         for (n in tt) {
             obj[n] = tt[n];
         }
-        
-        
+        obj.fcHplxsdr = end.u32();
+        obj.lcbHplxsdr = end.u32();
+        obj.fcSttbfBkmkSdt = end.u32();
+        obj.lcbSttbfBkmkSdt = end.u32();
+        obj.fcPlcfBkfSdt = end.u32();
+        obj.lcbPlcfBkfSdt = end.u32();
+        obj.fcPlcfBklSdt = end.u32();
+        obj.lcbPlcfBklSdt = end.u32();
+        obj.fcCustomXForm = end.u32();
+        obj.lcbCustomXForm = end.u32();
+        obj.fcSttbfBkmkProt = end.u32();
+        obj.lcbSttbfBkmkProt = end.u32();
+        obj.fcPlcfBkfProt = end.u32();
+        obj.lcbPlcfBkfProt = end.u32();
+        obj.fcPlcfBklProt = end.u32();
+        obj.lcbPlcfBklProt = end.u32();
+        obj.fcSttbProtUser = end.u32();
+        obj.lcbSttbProtUser = end.u32();
+        obj.fcUnused = end.u32();
+        obj.lcbUnused = end.u32();
+        obj.fcPlcfpmiOld = end.u32();
+        obj.lcbPlcfpmiOld = end.u32();
+        obj.fcPlcfpmiOldInline = end.u32();
+        obj.lcbPlcfpmiOldInline = end.u32();
+        obj.fcPlcfpmiNew = end.u32();
+        obj.lcbPlcfpmiNew = end.u32();
+        obj.fcPlcfpmiNewInline = end.u32();
+        obj.lcbPlcfpmiNewInline = end.u32();
+        obj.fcPlcflvcOld = end.u32();
+        obj.lcbPlcflvcOld = end.u32();
+        obj.fcPlcflvcOldInline = end.u32();
+        obj.lcbPlcflvcOldInline = end.u32();
+        obj.fcPlcflvcNew = end.u32();
+        obj.lcbPlcflvcNew = end.u32();
+        obj.fcPlcflvcNewInline = end.u32();
+        obj.lcbPlcflvcNewInline = end.u32();
+        obj.fcPgdMother = end.u32();
+        obj.lcbPgdMother = end.u32();
+        obj.fcBkdMother = end.u32();
+        obj.lcbBkdMother = end.u32();
+        obj.fcAfdMother = end.u32();
+        obj.lcbAfdMother = end.u32();
+        obj.fcPgdFtn = end.u32();
+        obj.lcbPgdFtn = end.u32();
+        obj.fcBkdFtn = end.u32();
+        obj.lcbBkdFtn = end.u32();
+        obj.fcAfdFtn = end.u32();
+        obj.lcbAfdFtn = end.u32();
+        obj.fcPgdEdn = end.u32();
+        obj.lcbPgdEdn = end.u32();
+        obj.fcBkdEdn = end.u32();
+        obj.lcbBkdEdn = end.u32();
+        obj.fcAfdEdn = end.u32();
+        obj.lcbAfdEdn = end.u32();
+        obj.fcAfd = end.u32();
+        obj.lcbAfd = end.u32();
+
+        return obj;
+    }
+
+    function getFibRgFcLcb2007(end) {
+        var tt = getFibRgFcLcb2003(end);
+        var obj = {};
+        for (n in tt) {
+            obj[n] = tt[n];
+        }
+        obj.fcPlcfmthd = end.u32();
+        obj.lcbPlcfmthd = end.u32();
+        obj.fcSttbfBkmkMoveFrom = end.u32();
+        obj.lcbSttbfBkmkMoveFrom = end.u32();
+        obj.fcPlcfBkfMoveFrom = end.u32();
+        obj.lcbPlcfBkfMoveFrom = end.u32();
+        obj.fcPlcfBklMoveFrom = end.u32();
+        obj.lcbPlcfBklMoveFrom = end.u32();
+        obj.fcSttbfBkmkMoveTo = end.u32();
+        obj.lcbSttbfBkmkMoveTo = end.u32();
+        obj.fcPlcfBkfMoveTo = end.u32();
+        obj.lcbPlcfBkfMoveTo = end.u32();
+        obj.fcPlcfBklMoveTo = end.u32();
+        obj.lcbPlcfBklMoveTo = end.u32();
+        obj.fcUnused1 = end.u32();
+        obj.lcbUnused1 = end.u32();
+        obj.fcUnused2 = end.u32();
+        obj.lcbUnused2 = end.u32();
+        obj.fcUnused3 = end.u32();
+        obj.lcbUnused3 = end.u32();
+        obj.fcSttbfBkmkArto = end.u32();
+        obj.lcbSttbfBkmkArto = end.u32();
+        obj.fcPlcfBkfArto = end.u32();
+        obj.lcbPlcfBkfArto = end.u32();
+        obj.fcPlcfBklArto = end.u32();
+        obj.lcbPlcfBklArto = end.u32();
+        obj.fcArtoData = end.u32();
+        obj.lcbArtoData = end.u32();
+        obj.fcUnused4 = end.u32();
+        obj.lcbUnused4 = end.u32();
+        obj.fcUnused5 = end.u32();
+        obj.lcbUnused5 = end.u32();
+        obj.fcUnused6 = end.u32();
+        obj.lcbUnused6 = end.u32();
+        obj.fcOssTheme = end.u32();
+        obj.lcbOssTheme = end.u32();
+        obj.fcColorSchemeMapping = end.u32();
+        obj.lcbColorSchemeMapping = end.u32();
+
         return obj;
     }
 };
