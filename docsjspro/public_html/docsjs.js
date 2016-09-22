@@ -118,7 +118,6 @@ Doc2003.prototype.getFib = function (end) {
     fib.cbRgFcLcb = end.u16();
     fib.fibRgFcLcbBlob = getFibRgFcLcbBlob(end, fib.fibBase.nFib);
     return fib;
-
     function getFibBase(end) {
         var fb = {};
         fb.wIdent = end.u16();
@@ -160,7 +159,6 @@ Doc2003.prototype.getFib = function (end) {
         return obj;
     }
     ;
-
     function getFibRgLw(end) {
         var obj = {};
         obj.cbMac = end.u32();
@@ -177,7 +175,6 @@ Doc2003.prototype.getFib = function (end) {
         return obj;
     }
     ;
-
     function getFibRgFcLcbBlob(end, nFib) {
         switch (nFib) {
             case 0x00C1:
@@ -192,11 +189,10 @@ Doc2003.prototype.getFib = function (end) {
                 return getFibRgFcLcb2007(end);
         }
         return {};
-    };
-
+    }
+    ;
     function getFibRgFcLcb97(end) {
         var obj = {};
-        
         obj.fcStshfOrig = end.u32();
         obj.lcbStshfOrig = end.u32();
         obj.fcStshf = end.u32();
@@ -384,11 +380,124 @@ Doc2003.prototype.getFib = function (end) {
         obj.fcSttbfUssr = end.u32();
         obj.lcbSttbfUssr = end.u32();
         return obj;
-    };
+    }
+    ;
+    function getFibRgFcLcb2000(end) {
+        var tt = getFibRgFcLcb97(end);
+        var obj = {};
+        for (n in tt) {
+            obj[n] = tt[n];
+        }
+        obj.fcPlcfTch = end.u32();
+        obj.lcbPlcfTch = end.u32();
+        obj.fcRmdThreading = end.u32();
+        obj.lcbRmdThreading = end.u32();
+        obj.fcMid = end.u32();
+        obj.lcbMid = end.u32();
+        obj.fcSttbRgtplc = end.u32();
+        obj.lcbSttbRgtplc = end.u32();
+        obj.fcMsoEnvelope = end.u32();
+        obj.lcbMsoEnvelope = end.u32();
+        obj.fcPlcfLad = end.u32();
+        obj.lcbPlcfLad = end.u32();
+        obj.fcRgDofr = end.u32();
+        obj.lcbRgDofr = end.u32();
+        obj.fcPlcosl = end.u32();
+        obj.lcbPlcosl = end.u32();
+        obj.fcPlcfCookieOld = end.u32();
+        obj.lcbPlcfCookieOld = end.u32();
+        obj.fcPgdMotherOld = end.u32();
+        obj.lcbPgdMotherOld = end.u32();
+        obj.fcBkdMotherOld = end.u32();
+        obj.lcbBkdMotherOld = end.u32();
+        obj.fcPgdFtnOld = end.u32();
+        obj.lcbPgdFtnOld = end.u32();
+        obj.fcBkdFtnOld = end.u32();
+        obj.lcbBkdFtnOld = end.u32();
+        obj.fcPgdEdnOld = end.u32();
+        obj.lcbPgdEdnOld = end.u32();
+        obj.fcBkdEdnOld = end.u32();
+        obj.lcbBkdEdnOld = end.u32();
+        return obj;
+    }
+    ;
+    function getFibRgFcLcb2002(end) {
+        var tt = getFibRgFcLcb2000(end);
+        var obj = {};
+        for (n in tt) {
+            obj[n] = tt[n];
+        }
+
+        obj.fcUnused1 = end.u32();
+        obj.lcbUnused1 = end.u32();
+        obj.fcPlcfPgp = end.u32();
+        obj.lcbPlcfPgp = end.u32();
+        obj.fcPlcfuim = end.u32();
+        obj.lcbPlcfuim = end.u32();
+        obj.fcPlfguidUim = end.u32();
+        obj.lcbPlfguidUim = end.u32();
+        obj.fcAtrdExtra = end.u32();
+        obj.lcbAtrdExtra = end.u32();
+        obj.fcPlrsid = end.u32();
+        obj.lcbPlrsid = end.u32();
+        obj.fcSttbfBkmkFactoid = end.u32();
+        obj.lcbSttbfBkmkFactoid = end.u32();
+        obj.fcPlcfBkfFactoid = end.u32();
+        obj.lcbPlcfBkfFactoid = end.u32();
+        obj.fcPlcfcookie = end.u32();
+        obj.lcbPlcfcookie = end.u32();
+        obj.fcPlcfBklFactoid = end.u32();
+        obj.lcbPlcfBklFactoid = end.u32();
+        obj.fcFactoidData = end.u32();
+        obj.lcbFactoidData = end.u32();
+        obj.fcDocUndo = end.u32();
+        obj.lcbDocUndo = end.u32();
+        obj.fcSttbfBkmkFcc = end.u32();
+        obj.lcbSttbfBkmkFcc = end.u32();
+        obj.fcPlcfBkfFcc = end.u32();
+        obj.lcbPlcfBkfFcc = end.u32();
+        obj.fcPlcfBklFcc = end.u32();
+        obj.lcbPlcfBklFcc = end.u32();
+        obj.fcSttbfbkmkBPRepairs = end.u32();
+        obj.lcbSttbfbkmkBPRepairs = end.u32();
+        obj.fcPlcfbkfBPRepairs = end.u32();
+        obj.lcbPlcfbkfBPRepairs = end.u32();
+        obj.fcPlcfbklBPRepairs = end.u32();
+        obj.lcbPlcfbklBPRepairs = end.u32();
+        obj.fcPmsNew = end.u32();
+        obj.lcbPmsNew = end.u32();
+        obj.fcODSO = end.u32();
+        obj.lcbODSO = end.u32();
+        obj.fcPlcfpmiOldXP = end.u32();
+        obj.lcbPlcfpmiOldXP = end.u32();
+        obj.fcPlcfpmiNewXP = end.u32();
+        obj.lcbPlcfpmiNewXP = end.u32();
+        obj.fcPlcfpmiMixedXP = end.u32();
+        obj.lcbPlcfpmiMixedXP = end.u32();
+        obj.fcUnused2 = end.u32();
+        obj.lcbUnused2 = end.u32();
+        obj.fcPlcffactoid = end.u32();
+        obj.lcbPlcffactoid = end.u32();
+        obj.fcPlcflvcOldXP = end.u32();
+        obj.lcbPlcflvcOldXP = end.u32();
+        obj.fcPlcflvcNewXP = end.u32();
+        obj.lcbPlcflvcNewXP = end.u32();
+        obj.fcPlcflvcMixedXP = end.u32();
+        obj.lcbPlcflvcMixedXP = end.u32();
+        return obj;
+    }
+
+    function getFibRgFcLcb2003(end) {
+        var tt = getFibRgFcLcb2002(end);
+        var obj = {};
+        for (n in tt) {
+            obj[n] = tt[n];
+        }
+        
+        
+        return obj;
+    }
 };
-
-
-
 function DocDir() {
     this.name = new Array(32);
     this.nameLen;
@@ -473,9 +582,7 @@ function readFile() {
             }
         }
         d3.decode97(end);
-
     };
-
     fr.readAsArrayBuffer(ff);
 }
 
