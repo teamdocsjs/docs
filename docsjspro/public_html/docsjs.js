@@ -84,8 +84,7 @@ function Doc2003() {
 
 Doc2003.prototype.decode97 = function (end) {
     var wStream = null;
-    var table0 = null;
-    var table1 = null;
+    var tables = [null, null];
     var objInfo = null;
     for (var i = 0, ii = this.dirs.length; i < ii; i++) {
         var nn = this.dirs[i].name;
@@ -94,10 +93,10 @@ Doc2003.prototype.decode97 = function (end) {
             wStream = this.dirs[i];
         } else if (nn === 49 && nn[1] === 84 && nn[2] === 97 && nn[3] === 98
                 && nn[4] === 108 && nn[5] === 101) {
-            table1 = this.dirs[i];
+            tables[1] = this.dirs[i];
         } else if (nn === 48 && nn[1] === 84 && nn[2] === 97 && nn[3] === 98
                 && nn[4] === 108 && nn[5] === 101) {
-            table0 = this.dirs[i];
+            tables[0] = this.dirs[i];
         }
     }
     if (wStream) {
@@ -116,7 +115,11 @@ Doc2003.prototype.getFib = function (end) {
     fib.cslw = end.u16();
     fib.fibRgLw = getFibRgLw(end);
     fib.cbRgFcLcb = end.u16();
-    fib.fibRgFcLcbBlob = getFibRgFcLcbBlob(end, fib.fibBase.nFib);
+    fib.fibRgFcLcbBlob = getFibRgFcLcbBlob(end, fib.cbRgFcLcb);
+    fib.cswNew = end.u16();
+    if (fib.cswNew) {
+        fib.fibRgCswNew = getFibRgCswNew(end);
+    }
     return fib;
     function getFibBase(end) {
         var fb = {};
@@ -600,6 +603,22 @@ Doc2003.prototype.getFib = function (end) {
 
         return obj;
     }
+
+    function getFibRgCswNew(end) {
+        var obj = {};
+        obj.nFibNew = end.u16();
+        if (obj.nFibNew === 0x112) {
+            obj.rgCswNewData = {};
+            obj.rgCswNewData.rgCswNewData2000 = end.u16();
+            obj.rgCswNewData.lidThemeOther = end.u16();
+            obj.rgCswNewData.lidThemeFE = end.u16();
+            obj.rgCswNewData.lidThemeCS = end.u16();
+        } else if (obj.nFibNew === 0xD9 || obj.nFibNew === 0x101 || obj.nFibNew === 0x10C) {
+            obj.rgCswNewData = {cQuickSavesNew: end.u16()};
+        }
+        return obj;
+    }
+
 };
 function DocDir() {
     this.name = new Array(32);
