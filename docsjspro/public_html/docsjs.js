@@ -20,8 +20,6 @@
 //[4 bytes] const SECT ENDOFCHAIN = 0xFFFFFFFE;
 //[4 bytes] const SECT FREESECT = 0xFFFFFFFF;
 
-
-
 function LitEnd(data) {
     this.bp = 0;
     this.arr = data;
@@ -91,10 +89,10 @@ Doc2003.prototype.decode97 = function (end) {
         if (nn[0] === 87 && nn[1] === 111 && nn[2] === 114 && nn[3] === 100
                 && nn[4] === 68 && nn[5] === 111 && nn[6] === 99 && nn[7] === 117) {
             wStream = this.dirs[i];
-        } else if (nn === 49 && nn[1] === 84 && nn[2] === 97 && nn[3] === 98
+        } else if (nn[0] === 49 && nn[1] === 84 && nn[2] === 97 && nn[3] === 98
                 && nn[4] === 108 && nn[5] === 101) {
             tables[1] = this.dirs[i];
-        } else if (nn === 48 && nn[1] === 84 && nn[2] === 97 && nn[3] === 98
+        } else if (nn[0] === 48 && nn[1] === 84 && nn[2] === 97 && nn[3] === 98
                 && nn[4] === 108 && nn[5] === 101) {
             tables[0] = this.dirs[i];
         }
@@ -102,9 +100,82 @@ Doc2003.prototype.decode97 = function (end) {
     if (wStream) {
         end.bp = wStream.streamOffset;
         this.fib = this.getFib(end);
+        //retriving text;
+        var tbl = tables[this.fib.fibBase.fWhichTblStm];
+        var clx = this.retrieveCLX(end,tbl);
+        var aCPS = clx.Pcdt.PlcPcd.aCP;
+        var aPCDS = clx.Pcdt.PlcPcd.aPCD;
+        
+        for (var i=0,ii = aPCDS.length;i<ii;i++){
+            var pcd = aPCDS[i];
+            var textLen = aCPS;
+            
+        }
+        console.log(aCPS);
+        console.log(aPCDS);
+        console.log(wStream.streamOffset+(4096/2)+32);
+        
     }
+   
+    
     console.log(this);
 
+};
+
+Doc2003.prototype.retrieveCLX = function (end, tbl){
+    var old = end.bp;
+    //going to read clx
+    var clxStart = end.bp = tbl.streamOffset +  this.fib.fibRgFcLcbBlob.fcClx;
+    var clxLen = this.fib.fibRgFcLcbBlob.lcbClx;    
+    var clxEnd = clxStart + clxLen;
+    
+    for (var i=0;i<clxLen;i++){
+        console.log("cc["+i+"]:"+end.u8());
+    }
+    end.bp = clxStart;
+    
+    var clx = {};
+    clx.RgPrc = end.u8();
+    if (clx.RgPrc === 2) {
+        var Pcdt = {};
+        Pcdt.lcb = end.u32();
+        var PlcPcd = {};
+        PlcPcd.aCP = [];
+        var frl = this.fib.fibRgLw;
+        var lastCCP = frl.ccpText;
+        var ccpTotal = frl.ccpFtn + frl.ccpHdd + frl.ccpAtn + frl.ccpEdn + frl.ccpTxbx;
+        if (ccpTotal !== 0) {
+            lastCCP = ccpTotal + lastCCP + 1;
+        }
+        while (end.bp < clxEnd) {
+            var cp = end.u32();
+            PlcPcd.aCP.push(cp);
+            if (cp === lastCCP) {
+                break;
+            }
+        }
+        PlcPcd.aPCD = [];
+        for (var i = 0, ii = PlcPcd.aCP.length - 1; i < ii; i++) {
+            var pcd = {};
+            var t = end.u16();
+            pcd.fNoParaLast = t & 1 ;
+            pcd.fR1 = (t >> 1) & 1;
+            pcd.fDirty = (t >> 2) & 1;
+            t = end.u32();
+            pcd.fc = {};
+            pcd.fc.fc = t & 0x3ffffff;
+            pcd.fc.fCompressed = (t >> 30) & 1;
+            pcd.prm = end.u16();
+            PlcPcd.aPCD[i] = pcd;
+        }
+        Pcdt.PlcPcd = PlcPcd;
+        clx.Pcdt = Pcdt;        
+        
+    }else{
+        alert("RgPrc is not 2");
+    }
+    end.bp = old;
+    return clx;
 };
 
 Doc2003.prototype.getFib = function (end) {
@@ -115,7 +186,7 @@ Doc2003.prototype.getFib = function (end) {
     fib.cslw = end.u16();
     fib.fibRgLw = getFibRgLw(end);
     fib.cbRgFcLcb = end.u16();
-    fib.fibRgFcLcbBlob = getFibRgFcLcbBlob(end, fib.cbRgFcLcb);
+    fib.fibRgFcLcbBlob = getFibRgFcLcbBlob(end, fib.fibBase.nFib);
     fib.cswNew = end.u16();
     if (fib.cswNew) {
         fib.fibRgCswNew = getFibRgCswNew(end);
@@ -128,29 +199,28 @@ Doc2003.prototype.getFib = function (end) {
         end.bp += 2;
         fb.lid = end.u16();
         fb.pnNext = end.u16();
-        var t = end.u8();
-        fb.fDot = t >> 7;
-        fb.fGlsy = (t >> 6) & 1;
-        fb.fComplex = (t >> 5) & 1;
-        fb.fHasPic = (t >> 4) & 1;
-        fb.cQuickSaves = t & 15;
-        t = end.u8();
-        fb.fEncrypted = t >> 7;
-        fb.fWhichTblStm = (t >> 6) & 1;
-        fb.fReadOnlyRecommended = (t >> 5) & 1;
-        fb.fWriteReservation = (t >> 4) & 1;
-        fb.fExtChar = (t >> 3) & 1;
-        fb.fLocalOverride = (t >> 2) & 1;
-        fb.fFarEast = (t >> 1) & 1;
-        fb.fObfuscated = t & 1;
+        var t = end.u16();
+        fb.fDot = t & 1;
+        fb.fGlsy = (t >> 1) & 1;
+        fb.fComplex = (t >> 2) & 1;
+        fb.fHasPic = (t >> 3) & 1;
+        fb.cQuickSaves = (t >> 4) & 15;
+        fb.fEncrypted = (t >> 8) & 1;
+        fb.fWhichTblStm = (t >> 9) & 1;
+        fb.fReadOnlyRecommended = (t >> 10) & 1;
+        fb.fWriteReservation = (t >> 11) & 1;
+        fb.fExtChar = (t >> 12) & 1;
+        fb.fLocalOverride = (t >> 13) & 1;
+        fb.fFarEast = (t >> 14) & 1;
+        fb.fObfuscated = (t >> 15) & 1;
         fb.nFibBack = end.u16();
         fb.lKey = end.u32();
-        fb.envr = end.u8();
-        t = end.u8();
-        fb.fMac = t >> 7;
-        fb.fEmptySpecial = (t >> 6) & 1;
-        fb.fLoadOverridePage = (t >> 5) & 1;
-        fb.fSpare0 = t & 7;
+        t = end.u16();
+        fb.envr = (t) & 0xff;
+        fb.fMac = (t >> 8) & 1;
+        fb.fEmptySpecial = (t >> 9) & 1;
+        fb.fLoadOverridePage = (t >> 10) & 1;
+        fb.fSpare0 = (t >> 13) & 7;
         end.bp += 12;
         return fb;
     }
@@ -180,18 +250,18 @@ Doc2003.prototype.getFib = function (end) {
 
     function getFibRgFcLcbBlob(end, nFib) {
         switch (nFib) {
-            case 0x00C1:
+            case 0xc1:
                 return getFibRgFcLcb97(end);
-            case 0x00D9:
+            case 0xD9:
                 return getFibRgFcLcb2000(end);
-            case 0x0101:
+            case 0x101:
                 return getFibRgFcLcb2002(end);
-            case 0x010C:
+            case 0x10C:
                 return getFibRgFcLcb2003(end);
-            case 0x0112:
+            case 0x112:
                 return getFibRgFcLcb2007(end);
         }
-        return {};
+        return null;
     }
 
     function getFibRgFcLcb97(end) {
@@ -620,6 +690,7 @@ Doc2003.prototype.getFib = function (end) {
     }
 
 };
+
 function DocDir() {
     this.name = new Array(32);
     this.nameLen;
