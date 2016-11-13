@@ -20,6 +20,7 @@
 //[4 bytes] const SECT ENDOFCHAIN = 0xFFFFFFFE;
 //[4 bytes] const SECT FREESECT = 0xFFFFFFFF;
 
+
 function LitEnd(data) {
     this.bp = 0;
     this.arr = data;
@@ -100,82 +101,83 @@ Doc2003.prototype.decode97 = function (end) {
     if (wStream) {
         end.bp = wStream.streamOffset;
         this.fib = this.getFib(end);
-        //retriving text;
+
         var tbl = tables[this.fib.fibBase.fWhichTblStm];
-        var clx = this.retrieveCLX(end,tbl);
+        //retrive CLX
+        var clx = this.getCLX(end, tbl);
         var aCPS = clx.Pcdt.PlcPcd.aCP;
         var aPCDS = clx.Pcdt.PlcPcd.aPCD;
-        
-        for (var i=0,ii = aPCDS.length;i<ii;i++){
+
+        //retrive PlcBtePapx
+        var PlcBtePapx = this.getPLCBTEPAPX(end, tbl);
+        var PapxFkps = new Array(PlcBtePapx.aPnBtePapx.length);
+
+        var cPara = 0;
+
+        for (var i = 0, ii = PlcBtePapx.aPnBtePapx.length; i < ii; i++) {
+            var pn = PlcBtePapx.aPnBtePapx[i].pn;
+            PapxFkps[i] = this.getPapxFkp(end, pn, wStream);
+            cPara += PapxFkps[i].cpara;
+        }
+        var paras = new Array(cPara);
+        for (var i = 0; i < cPara; i++) {
+            paras[i] = new Array();
+        }
+
+        for (var i = 0, ii = aPCDS.length; i < ii; i++) {
             var pcd = aPCDS[i];
-            var textLen = aCPS;
-            
-        }
-        console.log(aCPS);
-        console.log(aPCDS);
-        console.log(wStream.streamOffset+(4096/2)+32);
-        
-    }
-   
-    
-    console.log(this);
-
-};
-
-Doc2003.prototype.retrieveCLX = function (end, tbl){
-    var old = end.bp;
-    //going to read clx
-    var clxStart = end.bp = tbl.streamOffset +  this.fib.fibRgFcLcbBlob.fcClx;
-    var clxLen = this.fib.fibRgFcLcbBlob.lcbClx;    
-    var clxEnd = clxStart + clxLen;
-    
-    for (var i=0;i<clxLen;i++){
-        console.log("cc["+i+"]:"+end.u8());
-    }
-    end.bp = clxStart;
-    
-    var clx = {};
-    clx.RgPrc = end.u8();
-    if (clx.RgPrc === 2) {
-        var Pcdt = {};
-        Pcdt.lcb = end.u32();
-        var PlcPcd = {};
-        PlcPcd.aCP = [];
-        var frl = this.fib.fibRgLw;
-        var lastCCP = frl.ccpText;
-        var ccpTotal = frl.ccpFtn + frl.ccpHdd + frl.ccpAtn + frl.ccpEdn + frl.ccpTxbx;
-        if (ccpTotal !== 0) {
-            lastCCP = ccpTotal + lastCCP + 1;
-        }
-        while (end.bp < clxEnd) {
-            var cp = end.u32();
-            PlcPcd.aCP.push(cp);
-            if (cp === lastCCP) {
-                break;
+            var start, len;
+            var inc = 1;
+            var isComp = pcd.fc.fCompressed;
+            if (isComp === 1) {
+                start = pcd.fc.fc / 2;
+                len = aCPS[i + 1] - aCPS[i];
+            } else {
+                start = pcd.fc.fc;
+                len = 2 * (aCPS[i + 1] - aCPS[i]);
+                inc = 2;
+            }
+            end.bp = wStream.streamOffset + start;
+            var j = 0;
+            while (j < len) {
+                var cc = isComp === 1 ? end.u8() : end.u16();
+                var stopLoop = false;
+                var ptr = 0;
+                for (var z = 0, zz = PapxFkps.length; z < zz; z++) {
+                    if (stopLoop) {
+                        break;
+                    }
+                    cPara = PapxFkps[z].cpara;
+                    var rgfcs = PapxFkps[z].rgfc;
+                    var sj = start + j;
+                    for (var r = 0, rr = cPara; r < rr; r++) {
+                        if (sj >= rgfcs[r] && sj < rgfcs[r + 1]) {
+                            paras[ptr].push(cc);
+                            stopLoop = true;
+                            break;
+                        }
+                        ptr++;
+                    }
+                }
+                j += inc;
             }
         }
-        PlcPcd.aPCD = [];
-        for (var i = 0, ii = PlcPcd.aCP.length - 1; i < ii; i++) {
-            var pcd = {};
-            var t = end.u16();
-            pcd.fNoParaLast = t & 1 ;
-            pcd.fR1 = (t >> 1) & 1;
-            pcd.fDirty = (t >> 2) & 1;
-            t = end.u32();
-            pcd.fc = {};
-            pcd.fc.fc = t & 0x3ffffff;
-            pcd.fc.fCompressed = (t >> 30) & 1;
-            pcd.prm = end.u16();
-            PlcPcd.aPCD[i] = pcd;
+
+        var docsjsDiv = document.getElementById("docsjsDiv");
+        for (var i = 0, ii = paras.length; i < ii; i++) {
+            var len = paras[i].length;
+            var text = "";
+            for (var j = 0; j < len; j++) {
+                text += String.fromCharCode(paras[i][j]);
+            }
+            var p = document.createElement("p");
+            p.textContent = text;
+            docsjsDiv.appendChild(p);
         }
-        Pcdt.PlcPcd = PlcPcd;
-        clx.Pcdt = Pcdt;        
-        
-    }else{
-        alert("RgPrc is not 2");
+        //retriving text;
     }
-    end.bp = old;
-    return clx;
+    console.log(this);
+
 };
 
 Doc2003.prototype.getFib = function (end) {
@@ -690,6 +692,98 @@ Doc2003.prototype.getFib = function (end) {
     }
 
 };
+
+Doc2003.prototype.getCLX = function (end, tbl) {
+    var old = end.bp;
+    //going to read clx
+    var clxStart = end.bp = tbl.streamOffset + this.fib.fibRgFcLcbBlob.fcClx;
+    var clxLen = this.fib.fibRgFcLcbBlob.lcbClx;
+    var clxEnd = clxStart + clxLen;
+
+    end.bp = clxStart;
+
+    var clx = {};
+    clx.RgPrc = end.u8();
+    if (clx.RgPrc === 2) {
+        var Pcdt = {};
+        Pcdt.lcb = end.u32();
+        var PlcPcd = {};
+        PlcPcd.aCP = [];
+        var frl = this.fib.fibRgLw;
+        var lastCCP = frl.ccpText;
+        var ccpTotal = frl.ccpFtn + frl.ccpHdd + frl.ccpAtn + frl.ccpEdn + frl.ccpTxbx;
+        if (ccpTotal !== 0) {
+            lastCCP = ccpTotal + lastCCP + 1;
+        }
+        while (end.bp < clxEnd) {
+            var cp = end.u32();
+            PlcPcd.aCP.push(cp);
+            if (cp === lastCCP) {
+                break;
+            }
+        }
+        PlcPcd.aPCD = [];
+        for (var i = 0, ii = PlcPcd.aCP.length - 1; i < ii; i++) {
+            var pcd = {};
+            var t = end.u16();
+            pcd.fNoParaLast = t & 1;
+            pcd.fR1 = (t >> 1) & 1;
+            pcd.fDirty = (t >> 2) & 1;
+            t = end.u32();
+            pcd.fc = {};
+            pcd.fc.fc = t & 0x3ffffff;
+            pcd.fc.fCompressed = (t >> 30) & 1;
+            pcd.prm = end.u16();
+            PlcPcd.aPCD[i] = pcd;
+        }
+        Pcdt.PlcPcd = PlcPcd;
+        clx.Pcdt = Pcdt;
+
+    } else {
+        alert("RgPrc is not 2");
+    }
+    end.bp = old;
+    return clx;
+};
+
+Doc2003.prototype.getPLCBTEPAPX = function (end, tbl) {
+    var obj = {};
+
+    end.bp = tbl.streamOffset + this.fib.fibRgFcLcbBlob.fcPlcfBtePapx;
+    var cbPlc = this.fib.fibRgFcLcbBlob.lcbPlcfBtePapx;
+    var cbData = 4;
+    var n = (cbPlc - 4) / (4 + cbData);
+
+    obj.aFC = new Array(n + 1);
+    for (var i = 0, ii = n + 1; i < ii; i++) {
+        obj.aFC[i] = end.u32();
+    }
+    obj.aPnBtePapx = new Array(n);
+    for (var i = 0, ii = n; i < ii; i++) {
+        var t = end.u32();
+        obj.aPnBtePapx[i] = {pn: t & 0x3fffff};
+    }
+    return obj;
+};
+
+Doc2003.prototype.getPapxFkp = function (end, pn, wStream) {
+    var start = pn * 512 + wStream.streamOffset;
+    var obj = {};
+    end.bp = start + 511;
+    obj.cpara = end.u8();
+    end.bp = start;
+    var n = obj.cpara;
+    obj.rgfc = new Array(n + 1);
+    for (var i = 0, ii = n + 1; i < ii; i++) {
+        obj.rgfc[i] = end.u32();
+    }
+    obj.rgbx = new Array(n);
+    for (var i = 0; i < n; i++) {
+        obj.rgbx[i] = end.u8();
+        end.bp += 11;
+    }
+    return obj;
+}
 
 function DocDir() {
     this.name = new Array(32);
